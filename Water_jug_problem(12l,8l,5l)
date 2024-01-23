@@ -1,0 +1,127 @@
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Scanner;
+import java.util.Set;
+
+class State {
+    int jug12;
+    int jug8;
+    int jug5;
+
+    State(int jug12, int jug8, int jug5) {
+        this.jug12 = jug12;
+        this.jug8 = jug8;
+        this.jug5 = jug5;
+    }
+
+    @Override
+    public int hashCode() {
+        return jug12 * 100 + jug8 * 10 + jug5;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        State state = (State) obj;
+        return jug12 == state.jug12 && jug8 == state.jug8 && jug5 == state.jug5;
+    }
+}
+
+class Main{
+
+    public static int waterJugProblem(State initialState, State goalState) {
+        Queue<State> queue = new LinkedList<>();
+        Set<State> visited = new HashSet<>();
+
+        queue.add(initialState);
+        visited.add(initialState);
+
+        int transitions = 0;
+
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+
+            for (int i = 0; i < size; i++) {
+                State currentState = queue.poll();
+
+                if (currentState.equals(goalState)) {
+                    return transitions;
+                }
+
+                generateAndEnqueueNextStates(currentState, queue, visited);
+            }
+
+            transitions++;
+        }
+
+        return -1; // Goal state not reachable
+    }
+
+
+    private static void generateAndEnqueueNextStates(State currentState, Queue<State> queue, Set<State> visited) {
+        // Fill 12L jug
+        enqueueNextState(new State(12, currentState.jug8, currentState.jug5), queue, visited);
+
+        // Fill 8L jug
+        enqueueNextState(new State(currentState.jug12, 8, currentState.jug5), queue, visited);
+
+        // Fill 5L jug
+        enqueueNextState(new State(currentState.jug12, currentState.jug8, 5), queue, visited);
+
+        // Pour from 12L to 8L
+        enqueueNextState(new State(Math.max(0, currentState.jug12 - (8 - currentState.jug8)), Math.min(8, currentState.jug8 + currentState.jug12), currentState.jug5), queue, visited);
+
+        // Pour from 8L to 12L
+        enqueueNextState(new State(Math.min(12, currentState.jug12 + currentState.jug8), Math.max(0, currentState.jug8 - (12 - currentState.jug12)), currentState.jug5), queue, visited);
+
+        // Pour from 12L to 5L
+        enqueueNextState(new State(Math.max(0, currentState.jug12 - (5 - currentState.jug5)), currentState.jug8, Math.min(5, currentState.jug5 + currentState.jug12)), queue, visited);
+
+        // Pour from 5L to 12L
+        enqueueNextState(new State(Math.min(12, currentState.jug12 + currentState.jug5), currentState.jug8, Math.max(0, currentState.jug5 - (12 - currentState.jug12))), queue, visited);
+
+        // Pour from 8L to 5L
+        enqueueNextState(new State(currentState.jug12, Math.max(0, currentState.jug8 - (5 - currentState.jug5)), Math.min(5, currentState.jug5 + currentState.jug8)), queue, visited);
+
+        // Pour from 5L to 8L
+        enqueueNextState(new State(currentState.jug12, Math.min(8, currentState.jug8 + currentState.jug5), Math.max(0, currentState.jug5 - (8 - currentState.jug8))), queue, visited);
+
+        // Empty 12L jug
+        enqueueNextState(new State(0, currentState.jug8, currentState.jug5), queue, visited);
+
+        // Empty 8L jug
+        enqueueNextState(new State(currentState.jug12, 0, currentState.jug5), queue, visited);
+
+        // Empty 5L jug
+        enqueueNextState(new State(currentState.jug12, currentState.jug8, 0), queue, visited);
+    }
+
+    private static void enqueueNextState(State nextState, Queue<State> queue, Set<State> visited) {
+        if (!visited.contains(nextState)) {
+            queue.add(nextState);
+            visited.add(nextState);
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Enter the goal state (format: X Y Z): ");
+        int goalX = scanner.nextInt();
+        int goalY = scanner.nextInt();
+        int goalZ = scanner.nextInt();
+
+        State initialState = new State(12, 0, 0);
+        State goalState = new State(goalX, goalY, goalZ);
+
+        int transitions = waterJugProblem(initialState, goalState);
+
+        if (transitions != -1) {
+            System.out.println("Minimum number of transitions to reach the goal state: " + transitions);
+        } else {
+            System.out.println("Goal state is not reachable from the initial state.");
+        }
+    }
+}
